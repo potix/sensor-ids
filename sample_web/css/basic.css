@@ -1,0 +1,21 @@
+#MENU {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        width: 20%;
+        height: 100%;
+        border-right: 1px solid #CFCFCF;
+        border-bottom: 1px solid #CFCFCF;
+        overflow: auto;
+}
+#MAIN {
+        position: absolute;
+        top: 0px;
+        right: 0px;
+        width: 80%;
+        height: 100%;
+        border-left: 1px solid #CFCFCF;
+        border-bottom: 1px solid #CFCFCF;
+        overflow: auto;
+}
+

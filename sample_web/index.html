@@ -1,0 +1,172 @@
+<html>
+<head>
+  <title>
+    Intruder detect system      
+  </title>
+  <link rel="stylesheet" href="/ids/css/basic.css" type="text/css" />
+  <script type="text/javascript" src="/ids/js/jquery-1.4.2.min.js"></script>
+  <script type="text/javascript">
+    var CGIURL = "/ids/ids.cgi"
+    var TimerID;
+    var CameraID = 1;
+    var width = 320;
+    var height = 240;
+    <!-- windows -->
+    var ipcam_width = width;
+    var ipcam_height = height;
+    var port = "4321";
+    var login = "login";
+    var password = "password";
+    var code = "code";
+    $(document).ready(function(){
+	Update();
+        $.ajaxSetup({
+            cache: false
+        });
+        $("#CANCEL_ALERT").click(function(){
+          SendCommand("CANCEL_ALERT");
+        });
+        $("#STOP_MONITOR").click(function(){
+          SendCommand("STOP_MONITOR");
+        });
+        $("#START_MONITOR").click(function(){
+          SendCommand("START_MONITOR");
+        });
+        $("#CLEAR_ALERT_STATUS").click(function(){
+          SendCommand("CLEAR_ALERT_STATUS");
+        });
+        $("#CHANGE_CAMERA").click(function(){
+          ChangeCamera();
+        });
+        $("#EXPAND_CAMERA").click(function(){
+          CameraExpand();
+        });
+    });
+    function SendCommand(command) {
+        $.ajax({
+            type: "POST",
+            url: CGIURL,
+            data: "Command=" + command,
+            dataType: "json", 
+            cache: false,
+            beforeSend: function(){
+            },
+            success: function(CommandResponse){
+                if (command == "GET_ALERT_STATUS") {
+		    $("#ALERT_STATUS_VIEW").html("Alert Status: " + CommandResponse.Result);
+		} else if (command == "GET_MONITOR_STATUS") {
+		    $("#MONITOR_STATUS_VIEW").html("Monitor Status: " + CommandResponse.Result);
+		} else {
+		    if (CommandResponse.Result != "OK") {
+		        alert(CommandResponse.Result);
+		    }
+		}
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown){
+                alert("failed in send command : " + command);
+            },
+            complete: function(){
+                if (command == "CANCEL_ALERT" ||
+                    command == "CLEAR_ALERT_STATUS") {
+        	    SendCommand("GET_ALERT_STATUS");
+		} else if (command == "STOP_MONITOR" ||
+                           command == "START_MONITOR") {
+        	    SendCommand("GET_MONITOR_STATUS");
+		}
+            }
+        });
+    }
+    function Update() {
+        SendCommand("GET_ALERT_STATUS");
+        SendCommand("GET_MONITOR_STATUS");
+    }
+    function Load() {
+        TimerID = setInterval("Update()", 5000 );
+    }
+    function ChangeCamera() {
+        if (CameraID == 1) {
+            CameraID = 2;
+        } else {
+            CameraID = 1;
+        }
+        var new_url = "https://" + location.host + "/camera" + CameraID + "/snapshot.cgi";
+        $("#MJPEG_streaming").attr("src", new_url);
+    }
+    function CameraExpand() {
+        $("#CAMERA_CONTROL").html('<img id="MJPEG_streaming2" src="https://' + location.host + '/camera2/snapshot.cgi" align="center" width="176" height="144">');
+    }
+    <!-- EDIMAX IC-1510 code --> 
+    var MAC = (navigator.platform.indexOf("Mac") != -1) ? true : false;
+    var userAgent = navigator.userAgent.toLowerCase();
+    var browser = {
+        version: (userAgent.match(/.+(?:rv|it|ra|ie)[\/: ]([\d.]+)/) || [])[1],
+        chrome: /chrome/.test(userAgent),
+        safari: /webkit/.test(userAgent) && !/chrome/.test(userAgent) && !/iphone/.test(userAgent),
+        iphone: /webkit/.test(userAgent) && !/chrome/.test(userAgent) && /iphone/.test(userAgent),
+        opera: /opera/.test(userAgent),
+        firefox: /firefox/.test(userAgent),
+        msie: /msie/.test(userAgent) && !/opera/.test(userAgent),
+        mozilla: /mozilla/.test(userAgent)&&!/(compatible|webkit)/.test(userAgent)
+    };
+  </script>
+</head>
+<body onload="Load()">
+  <div id="MENU">
+  <table>
+    <tr>
+      <td>
+        <input id="STOP_MONITOR" type="button" name="STOP_MONITOR" value="stop monitor" /> 
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input id="START_MONITOR" type="button" name="START_MONITOR" value="start monitor" /> 
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input id="CANCEL_ALERT" type="button" name="CANCEL_ALERT" value="cancel alert" /> 
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <input id="CLEAR_ALERT_STATUS" type="button" name="CLEAR_ALERT_STATUS" value="clear alert status" /> 
+      </td>
+    </tr>
+  </table>
+  </div>
+  <div id="MAIN">
+     <div id="MONITOR_STATUS_VIEW">
+     </div>
+     <div id="ALERT_STATUS_VIEW">
+     </div>
+     <div>
+       <!-- EDIMAX IC-1510 code -->
+       <script language="javascript">
+       <!--
+         if (browser.msie) {
+             document.write('<script language="JScript" src="https://' + location.host + '/camera1/ipcam.js"></script>');
+         } else if (browser.iphone) {
+             document.write('<img id="MJPEG_streaming" src="https://' + location.host + '/camera1/snapshot.cgi" align="center" width="176" height="144">');
+         } else
+             document.write('<img id="MJPEG_streaming1" src="https://' + location.host + '/camera1/snapshot.cgi" align="center" width="' + width + '" height="' +  height + '">');
+       //-->
+       </script>
+     </div>
+     <div>
+       <!-- EDIMAX IC-1510 code -->
+       <script language="javascript">
+       <!--
+         if (browser.msie) {
+             document.write('<script language="JScript" src="https://' + location.host + '/camera2/ipcam.js"></script>');
+         } else if (browser.iphone) {
+             document.write('<div id="CHANGE_CAMERA"><input id="CHANGE_CAMERA" type="button" name="CANGE_CAMERA" value="change camera" />');
+             document.write('<input id="EXPAND_CAMERA" type="button" name="EXPAND_CAMERA" value="expand camera" /></div>');
+         } else
+             document.write('<img id="MJPEG_streaming2" src="https://' + location.host + '/camera2/snapshot.cgi" align="center" width="' + width  + '" height="' + height + '">');
+       //-->
+       </script>
+     </div>
+  </div>
+</body>
+</html>

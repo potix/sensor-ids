@@ -1,0 +1,124 @@
+Intruder detect system (ids)
+
+* はじめに
+  IO-DATA SENSOR-HM/ECOを利用した、侵入者検知システムです。
+  このソフトウェア単体では動作しないため、IO-DATA SENSOR-HM/ECOを
+  別途入手する必要があります。
+
+* フォルダ・ファイル構成
+   COPYING
+   CHANGELOG
+   README
+   VERSION
+   cgi/ : idsデーモンと通信するためのCGI
+       ids.cgi
+
+   sample_web/ : サンプルwebページのデータ
+       index.html
+       js/
+           jquery.js
+       css/
+           basic.css
+   ids/ idsデーモンのソースコード一式
+       Makefile
+       *.c
+       *.h
+   conf/
+       idsデーモンの設定ファイルサンプル
+   scropt/
+       first_alert_script.sh 一次警報処理を記述したスクリプトサンプル
+       second_alert_script.sh 二次警報処理を記述したスクリプトサンプル
+
+* コンパイル方法
+  idsのディレクトリでmakeしてください。
+     > cd ids
+     > make
+  依存ライブラリはlibeventとlibusbです。
+  出来ない場合は適当にMakefileを自分の環境に合わせてください。
+  (そのうちautoconf/automakeやります。)
+
+* インストール方法
+  idsとconfとscriptディレクトリでmake installをすると/var/idsにインストールされます。
+  別の場所にインストールしたい場合は、手動でコピーしてください。
+　以下を同じディレクトリにいれると、デフォルト設定で動くので楽です。
+     - ids/ids (バイナリ)
+     - script/first_alert_script
+     - script/second_alert_script
+     - conf/ids.conf
+  その他のcgiやweb周りに必要なファイルは改修して適切な場所に置いてください。
+  ids.cgiにはjsonが必要です。
+  また、ids.cgiの中にデーモンへ接続するための
+  アドレスとポート番号がハードコードされいます。必要に応じて変更してください。
+  (そのうち設定化します)
+
+* 使用方法
+  idsを起動します
+     > ./ids
+  コンフィグを指定しつつ起動する場合は以下
+     > ./ids -c ids.conf
+  後は、WEBでアクセスするだけです。
+
+* 設定項目
+  ## 一次警報スクリプトのパス
+  #first_alert_script = ./first_alert_script.sh
+
+  ## 二次警報スクリプトのパス
+  #second_alert_script = ./second_alert_script.sh
+
+  ## 二次警報をキャンセルする猶予時間(sec指定)
+  ## 5 〜 86400
+  #cancel_wait_time = 60
+
+  ## ポーリングインターバル(usec指定)
+  ## USBのinterrupt tranferの間隔に従うこと
+  ## 1ms 〜 255ms の 1ms刻み
+  #poll_interval = 5000
+
+  ## アラート処理を実行する連続検知の閾値
+  ## 小さいと検知しやすく、大きいと検知しにくい
+  ## 1 〜 65535
+  #alert_threshold =  12
+
+  ## idsが制御用にバインドするポート番号
+  #rpc_port = 18000
+
+  ## idsの制御タイムアウト(sec指定)
+  ## 5 〜 3600
+  #rpc_timeout = 60
+
+  ## プロセスIDファイルパス
+  #pid_file_path = /var/run/ids.pid
+
+* RPCに関して
+  telnetのようなlineベースの通信をします
+     <command>\r\n
+  レスポンスは以下の形で得られます。
+     <response>\r\n
+  コマンドには以下があります。
+    - 監視を止める
+      command = STOP_MONITOR
+      response = OK   成功した
+                 NG   エラーが発生した
+    - 監視を開始
+      command = START_MONITOR
+      response = OK   成功した
+                 NG   エラーが発生した
+    - 検出したファーストアラートのキャンセル
+      command = CANCEL_ALERT
+      response = OK   成功した
+                 NG   エラーが発生した
+    - アラート検出状態をクリア
+      command = CLEAR_ALERT_STATUS
+      response = OK   成功した
+                 NG   エラーが発生した
+    - 現在のアラーと検出状態を取得
+      command = GET_ALERT_STATUS
+      reaponse = GOOD    何も検出されていない
+                 FIRST   ファーストアラート
+                 SECOND  セカンドアラート
+                 NG      エラーが発生した
+    - 現在の監視状態を取得
+      command = GET_MONITOR_STATUS
+      response = RUNNING   監視中
+                 STOPPING  監視停止中
+                 NG        エラーが発生した
